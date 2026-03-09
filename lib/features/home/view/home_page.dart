@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'widgets/feed_post_card.dart';
@@ -56,7 +57,9 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SliverToBoxAdapter(
-            child: StoryBar(onAddStory: () {}),
+            child: StoryBar(
+              onAddStory: () => context.push('/story/select-pet'),
+            ),
           ),
           // Only rendered during active upload
           if (_uploadProgress != null)

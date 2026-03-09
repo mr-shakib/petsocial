@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../viewmodel/auth_viewmodel.dart';
 import 'widgets/login_footer.dart';
 import 'widgets/login_header.dart';
 import 'widgets/login_illustration.dart';
 import 'widgets/password_input_field.dart';
 import 'widgets/phone_input_field.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  String _fullPhone = '';
 
   @override
   void dispose() {
@@ -25,9 +28,27 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> _onNext() async {
+    final phone = _fullPhone.isNotEmpty ? _fullPhone : _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+    if (phone.isEmpty || password.isEmpty) return;
+
+    final success = await ref.read(authProvider.notifier).login(phone, password);
+    if (success && mounted) context.go('/home');
+  }
+
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.sizeOf(context).height;
+    final auth = ref.watch(authProvider);
+
+    if (auth.error != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(auth.error!), backgroundColor: Colors.red),
+        );
+      });
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,11 +59,17 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const LoginHeader(),
               SizedBox(height: h * 0.033),
-              PhoneInputField(controller: _phoneController),
+              PhoneInputField(
+                controller: _phoneController,
+                onCompleteNumber: (n) => _fullPhone = n,
+              ),
               SizedBox(height: h * 0.02),
               PasswordInputField(controller: _passwordController),
               const LoginIllustration(),
-              LoginFooter(onNext: () => context.go('/home')),
+              LoginFooter(
+                onNext: auth.isLoading ? null : () => _onNext(),
+                isLoading: auth.isLoading,
+              ),
             ],
           ),
         ),

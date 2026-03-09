@@ -5,7 +5,14 @@ import '../../../../core/constants/app_colors.dart';
 class PhoneInputField extends StatelessWidget {
   final TextEditingController controller;
 
-  const PhoneInputField({super.key, required this.controller});
+  /// Called with the full E.164 number (e.g. +8801122223333) on every change.
+  final ValueChanged<String>? onCompleteNumber;
+
+  const PhoneInputField({
+    super.key,
+    required this.controller,
+    this.onCompleteNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +65,7 @@ class PhoneInputField extends StatelessWidget {
             showDropdownIcon: false,
             dropdownTextStyle: TextStyle(fontSize: w * 0.038, color: AppColors.textGrey),
             flagsButtonPadding: EdgeInsets.only(left: w * 0.03, right: w * 0.01),
-            onChanged: (_) {},
+            onChanged: (phone) => onCompleteNumber?.call(phone.completeNumber),
           ),
         ],
       ),
