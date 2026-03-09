@@ -34,7 +34,7 @@ class HomeTabs extends StatelessWidget {
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected
                       ? AppColors.textBlack
-                      : const Color(0xFFC4A882),
+                      : AppColors.tabInactive,
                 ),
               ),
             ),

@@ -28,4 +28,7 @@ class AppColors {
 
   // Progress bar
   static const Color progressTrack = Color(0xFFF5E6E0);
+
+  // Tab inactive
+  static const Color tabInactive = Color(0xFFE0CBAB);
 }
