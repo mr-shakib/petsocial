@@ -17,7 +17,9 @@ class PetModel {
         id: json['id'] as String,
         name: json['name'] as String,
         pictureUrl: json['pictureUrl'] as String?,
-        petType: json['petType'] as int? ?? 0,
+        petType: json['petType'] is int
+            ? json['petType'] as int
+            : int.tryParse(json['petType']?.toString() ?? '') ?? 0,
         isDefault: json['isDefault'] as bool? ?? false,
       );
 }

@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/signalr_service.dart';
+import '../../../core/services/token_service.dart';
+import '../../story_create/viewmodel/story_create_viewmodel.dart';
+import '../../story_view/model/story_view_data.dart';
+import '../model/story_group_model.dart';
+import '../viewmodel/home_viewmodel.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'widgets/feed_post_card.dart';
 import 'widgets/home_app_bar.dart';
@@ -27,23 +34,69 @@ const _mockPosts = [
   ),
 ];
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   int _tabIndex = 0;
   int _navIndex = 0;
+  SignalRService? _signalR;
 
-  // null = not uploading; 0.0–1.0 = upload progress
-  double? _uploadProgress = 0.6;
+  @override
+  void initState() {
+    super.initState();
+    _initSignalR();
+  }
+
+  Future<void> _initSignalR() async {
+    final token = await TokenService.getToken();
+    if (token == null) return;
+    _signalR = SignalRService(
+      onNewStory: () => ref.invalidate(homeStoryProvider),
+    );
+    await _signalR!.connect(token);
+  }
+
+  @override
+  void dispose() {
+    _signalR?.disconnect();
+    super.dispose();
+  }
+
+  void _openStoryViewer(StoryGroupModel group) {
+    final validStories =
+        group.stories.where((s) => (s.image ?? s.video) != null).toList();
+    if (validStories.isEmpty) return;
+
+    context.push('/story/viewer', extra: StoryViewData(
+      petName: group.petName,
+      ownerName: group.ownerUsername,
+      petAvatarUrl: group.petPictureUrl,
+      mediaUrls: validStories.map((s) => s.image ?? s.video!).toList(),
+      isVideo: validStories.map((s) => s.video != null).toList(),
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
+    final storiesAsync = ref.watch(homeStoryProvider);
+    final createState = ref.watch(storyCreateProvider);
+    final userAvatarUrl = ref.watch(profilePictureProvider).valueOrNull;
+
+    // Refresh story list and auto-hide posting indicator when upload finishes
+    ref.listen<StoryCreateState>(storyCreateProvider, (prev, next) {
+      if (prev?.isDone == false && next.isDone) {
+        ref.invalidate(homeStoryProvider);
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted) ref.read(storyCreateProvider.notifier).reset();
+        });
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -57,16 +110,32 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SliverToBoxAdapter(
-            child: StoryBar(
-              onAddStory: () => context.push('/story/select-pet'),
+            child: storiesAsync.when(
+              data: (stories) => StoryBar(
+                onAddStory: () => context.push('/story/select-pet'),
+                userAvatarUrl: userAvatarUrl,
+                stories: stories,
+                onStoryTap: _openStoryViewer,
+              ),
+              loading: () => StoryBar(
+                onAddStory: () => context.push('/story/select-pet'),
+                userAvatarUrl: userAvatarUrl,
+                stories: const [],
+                onStoryTap: (_) {},
+              ),
+              error: (_, __) => StoryBar(
+                onAddStory: () => context.push('/story/select-pet'),
+                userAvatarUrl: userAvatarUrl,
+                stories: const [],
+                onStoryTap: (_) {},
+              ),
             ),
           ),
-          // Only rendered during active upload
-          if (_uploadProgress != null)
+          if (createState.isUploading || createState.isDone)
             SliverToBoxAdapter(
               child: PostingIndicator(
-                avatarUrl: 'https://picsum.photos/seed/av1/100/100',
-                progress: _uploadProgress!,
+                avatarUrl: null,
+                progress: createState.progress,
               ),
             ),
           SliverList(

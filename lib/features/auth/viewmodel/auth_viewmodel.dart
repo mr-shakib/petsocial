@@ -32,6 +32,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final result = await repo.login(loginIdentifier, password);
       await TokenService.saveToken(result.token);
       await TokenService.saveUserId(result.id);
+      await TokenService.saveProfilePictureUrl(result.profilePictureUrl);
       state = state.copyWith(isLoading: false, isAuthenticated: true);
       return true;
     } catch (e) {

@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
+import '../../model/story_group_model.dart';
 import 'story_add_item.dart';
 import 'story_item_card.dart';
 
-class _MockStory {
-  final String username;
-  final String? imageUrl;
-  final bool allSeen;
-  const _MockStory({required this.username, this.imageUrl, this.allSeen = false});
-}
-
-const _mockStories = [
-  _MockStory(username: 'CoolUser1', imageUrl: 'https://picsum.photos/seed/dog1/200/250'),
-  _MockStory(username: 'CoolUser1', imageUrl: 'https://picsum.photos/seed/dog2/200/250'),
-  _MockStory(username: 'CoolUser1', imageUrl: 'https://picsum.photos/seed/dog3/200/250'),
-  _MockStory(username: 'CoolUser1', imageUrl: 'https://picsum.photos/seed/dog4/200/250', allSeen: true),
-];
-
 class StoryBar extends StatelessWidget {
   final VoidCallback onAddStory;
+  final String? userAvatarUrl;
+  final List<StoryGroupModel> stories;
+  final void Function(StoryGroupModel group) onStoryTap;
 
-  const StoryBar({super.key, required this.onAddStory});
+  const StoryBar({
+    super.key,
+    required this.onAddStory,
+    this.userAvatarUrl,
+    required this.stories,
+    required this.onStoryTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +26,7 @@ class StoryBar extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: w * 0.05),
-        itemCount: _mockStories.length + 1,
+        itemCount: stories.length + 1,
         separatorBuilder: (_, i) => i == 0
             ? Row(
                 children: [
@@ -46,14 +42,18 @@ class StoryBar extends StatelessWidget {
             : SizedBox(width: w * 0.04),
         itemBuilder: (_, i) {
           if (i == 0) {
-            return StoryAddItem(onTap: onAddStory);
+            return StoryAddItem(avatarUrl: userAvatarUrl, onTap: onAddStory);
           }
-          final story = _mockStories[i - 1];
+          final group = stories[i - 1];
+          final firstStory =
+              group.stories.isNotEmpty ? group.stories.first : null;
+          final thumbUrl = firstStory?.image ?? firstStory?.video;
+
           return StoryItemCard(
-            username: story.username,
-            imageUrl: story.imageUrl,
-            allSeen: story.allSeen,
-            onTap: () {},
+            username: group.petName,
+            imageUrl: thumbUrl,
+            allSeen: group.allSeen,
+            onTap: () => onStoryTap(group),
           );
         },
       ),

@@ -17,5 +17,13 @@ class TokenService {
 
   static Future<String?> getUserId() => _storage.read(key: _userIdKey);
 
+  static const _profilePicKey = 'profile_picture_url';
+
+  static Future<void> saveProfilePictureUrl(String? url) =>
+      _storage.write(key: _profilePicKey, value: url);
+
+  static Future<String?> getProfilePictureUrl() =>
+      _storage.read(key: _profilePicKey);
+
   static Future<void> clear() => _storage.deleteAll();
 }
