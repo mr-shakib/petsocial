@@ -47,7 +47,10 @@ class StoryBar extends StatelessWidget {
           final group = stories[i - 1];
           final firstStory =
               group.stories.isNotEmpty ? group.stories.first : null;
-          final thumbUrl = firstStory?.image ?? firstStory?.video;
+          final isVideo = firstStory?.video != null && firstStory?.image == null;
+          final thumbUrl = isVideo
+              ? group.petPictureUrl
+              : firstStory?.image;
 
           return StoryItemCard(
             username: group.petName,

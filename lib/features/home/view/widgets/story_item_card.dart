@@ -52,14 +52,14 @@ class StoryItemCard extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(radius),
                 child: imageUrl != null
-                    ? Image.network(
-                        imageUrl!,
-                        width: cardW,
-                        height: cardH,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholder(cardW, cardH, w),
-                      )
-                    : _placeholder(cardW, cardH, w),
+                        ? Image.network(
+                            imageUrl!,
+                            width: cardW,
+                            height: cardH,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _placeholder(cardW, cardH, w),
+                          )
+                        : _placeholder(cardW, cardH, w),
               ),
             ),
           ),

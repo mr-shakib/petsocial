@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/constants/app_colors.dart';
+import 'widgets/camera_controls_bar.dart';
 
 class StoryCameraPage extends StatefulWidget {
   final String petId;
@@ -20,8 +21,8 @@ class _StoryCameraPageState extends State<StoryCameraPage>
   int _cameraIndex = 0;
   bool _loading = true;
   String? _errorMessage;
-  bool _capturing = false;
   bool _galleryOpen = false;
+  bool _isRecording = false;
 
   @override
   void initState() {
@@ -39,8 +40,6 @@ class _StoryCameraPageState extends State<StoryCameraPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Skip lifecycle handling while gallery picker is active — we manage
-    // camera pause/resume manually inside _pickGallery to avoid texture conflicts.
     if (_galleryOpen) return;
     final ctrl = _controller;
     if (ctrl == null || !ctrl.value.isInitialized) return;
@@ -57,21 +56,17 @@ class _StoryCameraPageState extends State<StoryCameraPage>
       _loading = true;
       _errorMessage = null;
     });
-
-    // Request camera permission first
-    final status = await Permission.camera.request();
-    if (!status.isGranted) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _errorMessage = status.isPermanentlyDenied
-              ? 'Camera permission permanently denied.\nEnable it in Settings.'
-              : 'Camera permission denied.';
-        });
-      }
+    final statuses = await [Permission.camera, Permission.microphone].request();
+    if (statuses[Permission.camera]?.isGranted != true) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _errorMessage = statuses[Permission.camera]?.isPermanentlyDenied == true
+            ? 'Camera permission permanently denied.\nEnable it in Settings.'
+            : 'Camera permission denied.';
+      });
       return;
     }
-
     try {
       _cameras = await availableCameras();
     } catch (e) {
@@ -83,7 +78,6 @@ class _StoryCameraPageState extends State<StoryCameraPage>
       }
       return;
     }
-
     if (_cameras.isEmpty) {
       if (mounted) {
         setState(() {
@@ -93,28 +87,23 @@ class _StoryCameraPageState extends State<StoryCameraPage>
       }
       return;
     }
-
-    // Prefer back camera
     _cameraIndex = _cameras.indexWhere(
       (c) => c.lensDirection == CameraLensDirection.back,
     );
     if (_cameraIndex < 0) _cameraIndex = 0;
-
     await _initControllerAt(_cameraIndex);
   }
 
   Future<void> _initControllerAt(int index) async {
     await _controller?.dispose();
     _controller = null;
-
     final ctrl = CameraController(
       _cameras[index],
       ResolutionPreset.high,
-      enableAudio: false,
+      enableAudio: true,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
     _controller = ctrl;
-
     try {
       await ctrl.initialize();
       if (mounted) setState(() => _loading = false);
@@ -136,7 +125,7 @@ class _StoryCameraPageState extends State<StoryCameraPage>
   }
 
   Future<void> _flipCamera() async {
-    if (_cameras.length < 2) return;
+    if (_cameras.length < 2 || _isRecording) return;
     final next = (_cameraIndex + 1) % _cameras.length;
     setState(() {
       _loading = true;
@@ -145,10 +134,9 @@ class _StoryCameraPageState extends State<StoryCameraPage>
     await _initControllerAt(next);
   }
 
-  Future<void> _capture() async {
+  Future<void> _capturePhoto() async {
     final ctrl = _controller;
-    if (ctrl == null || !ctrl.value.isInitialized || _capturing) return;
-    setState(() => _capturing = true);
+    if (ctrl == null || !ctrl.value.isInitialized) return;
     try {
       final file = await ctrl.takePicture();
       if (mounted) {
@@ -160,7 +148,6 @@ class _StoryCameraPageState extends State<StoryCameraPage>
       }
     } on CameraException catch (e) {
       if (mounted) {
-        setState(() => _capturing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to capture: ${e.description}')),
         );
@@ -168,30 +155,56 @@ class _StoryCameraPageState extends State<StoryCameraPage>
     }
   }
 
-  Future<void> _pickGallery() async {
-    // Pause camera manually before opening gallery to avoid texture conflicts
+  Future<void> _startRecording() async {
+    final ctrl = _controller;
+    if (ctrl == null || !ctrl.value.isInitialized || _isRecording) return;
+    try {
+      await ctrl.startVideoRecording();
+      if (mounted) setState(() => _isRecording = true);
+    } on CameraException catch (_) {}
+  }
+
+  Future<void> _stopRecording() async {
+    final ctrl = _controller;
+    if (ctrl == null || !_isRecording) return;
+    try {
+      final file = await ctrl.stopVideoRecording();
+      if (mounted) {
+        setState(() => _isRecording = false);
+        context.pushReplacement('/story/preview', extra: {
+          'petId': widget.petId,
+          'filePath': file.path,
+          'isVideo': true,
+        });
+      }
+    } on CameraException catch (_) {
+      if (mounted) setState(() => _isRecording = false);
+    }
+  }
+
+  Future<void> _pickGallery({required bool isVideo}) async {
     _galleryOpen = true;
     await _controller?.dispose();
     _controller = null;
-
-    final file = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 1080,
-    );
-
+    XFile? file;
+    if (isVideo) {
+      file = await ImagePicker().pickVideo(source: ImageSource.gallery);
+    } else {
+      file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1080,
+      );
+    }
     _galleryOpen = false;
-
     if (!mounted) return;
-
     if (file != null) {
       context.pushReplacement('/story/preview', extra: {
         'petId': widget.petId,
         'filePath': file.path,
-        'isVideo': false,
+        'isVideo': isVideo,
       });
     } else {
-      // User cancelled — reinitialize camera with fresh texture
       setState(() => _loading = true);
       await _initControllerAt(_cameraIndex);
     }
@@ -200,16 +213,12 @@ class _StoryCameraPageState extends State<StoryCameraPage>
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    final h = MediaQuery.sizeOf(context).height;
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          _buildPreview(w, h),
-
-          // Top bar
+          _buildPreview(w),
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -219,13 +228,19 @@ class _StoryCameraPageState extends State<StoryCameraPage>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _IconBtn(
-                    icon: Icons.close,
-                    size: w * 0.065,
-                    onTap: () => context.pop(),
-                  ),
-                  if (_cameras.length > 1 && !_loading && _errorMessage == null)
-                    _IconBtn(
+                  if (!_isRecording)
+                    CameraIconBtn(
+                      icon: Icons.close,
+                      size: w * 0.065,
+                      onTap: () => context.pop(),
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  if (_cameras.length > 1 &&
+                      !_loading &&
+                      _errorMessage == null &&
+                      !_isRecording)
+                    CameraIconBtn(
                       icon: Icons.flip_camera_ios_rounded,
                       size: w * 0.065,
                       onTap: _flipCamera,
@@ -234,79 +249,25 @@ class _StoryCameraPageState extends State<StoryCameraPage>
               ),
             ),
           ),
-
-          // Bottom controls — only show when camera is ready
           if (!_loading && _errorMessage == null)
-            Positioned(
-              bottom: h * 0.06,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left spacer (balances gallery button on right)
-                  SizedBox(width: w * 0.13),
-
-                  SizedBox(width: w * 0.08),
-
-                  // Shutter button
-                  GestureDetector(
-                    onTap: _capture,
-                    child: Container(
-                      width: w * 0.2,
-                      height: w * 0.2,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        color: Colors.white.withValues(alpha: 0.15),
-                      ),
-                      child: _capturing
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-
-                  SizedBox(width: w * 0.08),
-
-                  // Gallery button (right)
-                  GestureDetector(
-                    onTap: _pickGallery,
-                    child: Container(
-                      width: w * 0.13,
-                      height: w * 0.13,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white54, width: 2),
-                        color: Colors.white12,
-                      ),
-                      child: Icon(
-                        Icons.photo_library_rounded,
-                        color: Colors.white70,
-                        size: w * 0.055,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            CameraControlsBar(
+              onCapture: _capturePhoto,
+              onRecordStart: _startRecording,
+              onRecordStop: _stopRecording,
+              onGalleryPick: _pickGallery,
+              isRecording: _isRecording,
             ),
         ],
       ),
     );
   }
 
-  Widget _buildPreview(double w, double h) {
+  Widget _buildPreview(double w) {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
       );
     }
-
     if (_errorMessage != null) {
       return Center(
         child: Padding(
@@ -314,49 +275,38 @@ class _StoryCameraPageState extends State<StoryCameraPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.camera_alt_outlined, color: Colors.white54, size: w * 0.15),
-              SizedBox(height: h * 0.02),
+              Icon(Icons.camera_alt_outlined,
+                  color: Colors.white54, size: w * 0.15),
+              SizedBox(height: w * 0.04),
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white70, fontSize: w * 0.038),
               ),
-              SizedBox(height: h * 0.03),
-              if (_errorMessage!.contains('Settings'))
-                TextButton(
-                  onPressed: openAppSettings,
-                  child: Text(
-                    'Open Settings',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: w * 0.04,
-                    ),
-                  ),
-                )
-              else
-                TextButton(
-                  onPressed: _initCamera,
-                  child: Text(
-                    'Retry',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: w * 0.04,
-                    ),
-                  ),
+              SizedBox(height: w * 0.06),
+              TextButton(
+                onPressed: _errorMessage!.contains('Settings')
+                    ? openAppSettings
+                    : _initCamera,
+                child: Text(
+                  _errorMessage!.contains('Settings')
+                      ? 'Open Settings'
+                      : 'Retry',
+                  style: TextStyle(
+                      color: AppColors.primary, fontSize: w * 0.04),
                 ),
+              ),
             ],
           ),
         ),
       );
     }
-
     final ctrl = _controller;
     if (ctrl == null || !ctrl.value.isInitialized) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white),
       );
     }
-
     return ClipRect(
       child: OverflowBox(
         alignment: Alignment.center,
@@ -368,29 +318,6 @@ class _StoryCameraPageState extends State<StoryCameraPage>
             child: CameraPreview(ctrl),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final double size;
-  final VoidCallback onTap;
-
-  const _IconBtn({required this.icon, required this.size, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(size * 0.3),
-        decoration: const BoxDecoration(
-          color: Colors.black45,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: AppColors.white, size: size),
       ),
     );
   }

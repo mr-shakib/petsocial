@@ -45,11 +45,25 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _tabIndex = 0;
   int _navIndex = 0;
   SignalRService? _signalR;
+  ProviderSubscription<StoryCreateState>? _uploadSub;
 
   @override
   void initState() {
     super.initState();
     _initSignalR();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _uploadSub = ref.listenManual<StoryCreateState>(
+        storyCreateProvider,
+        (prev, next) {
+          if (prev?.isDone == false && next.isDone) {
+            ref.invalidate(homeStoryProvider);
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              if (mounted) ref.read(storyCreateProvider.notifier).reset();
+            });
+          }
+        },
+      );
+    });
   }
 
   Future<void> _initSignalR() async {
@@ -63,6 +77,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   void dispose() {
+    _uploadSub?.close();
     _signalR?.disconnect();
     super.dispose();
   }
@@ -76,8 +91,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       petName: group.petName,
       ownerName: group.ownerUsername,
       petAvatarUrl: group.petPictureUrl,
+      storyIds: validStories.map((s) => s.id).toList(),
       mediaUrls: validStories.map((s) => s.image ?? s.video!).toList(),
       isVideo: validStories.map((s) => s.video != null).toList(),
+      createdAts: validStories.map((s) => s.createdAt).toList(),
     ));
   }
 
@@ -87,16 +104,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final storiesAsync = ref.watch(homeStoryProvider);
     final createState = ref.watch(storyCreateProvider);
     final userAvatarUrl = ref.watch(profilePictureProvider).valueOrNull;
-
-    // Refresh story list and auto-hide posting indicator when upload finishes
-    ref.listen<StoryCreateState>(storyCreateProvider, (prev, next) {
-      if (prev?.isDone == false && next.isDone) {
-        ref.invalidate(homeStoryProvider);
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) ref.read(storyCreateProvider.notifier).reset();
-        });
-      }
-    });
 
     return Scaffold(
       backgroundColor: AppColors.background,

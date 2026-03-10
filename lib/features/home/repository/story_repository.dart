@@ -10,6 +10,10 @@ class HomeStoryRepository {
         .map((e) => StoryGroupModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<void> deleteStory(String storyId) async {
+    await dioClient.delete('/api/stories/$storyId');
+  }
 }
 
 final homeStoryRepositoryProvider =
