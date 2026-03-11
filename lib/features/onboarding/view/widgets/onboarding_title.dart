@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class OnboardingTitle extends StatelessWidget {
   const OnboardingTitle({super.key});
@@ -17,7 +16,8 @@ class OnboardingTitle extends StatelessWidget {
         children: [
           Text(
             'Meet Your\nNew Friend',
-            style: GoogleFonts.pacifico(
+            style: TextStyle(
+              fontFamily: 'Pacifico',
               fontSize: w * 0.108,
               color: Colors.white,
               height: 1.25,
