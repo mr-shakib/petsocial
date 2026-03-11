@@ -25,6 +25,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage>
   double _dragScale = 1.0;
   VideoPlayerController? _videoCtrl;
   bool _videoReady = false;
+  bool _isPaused = false;
 
   static const _storyDuration = Duration(seconds: 5);
 
@@ -85,6 +86,20 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage>
       setState(() { _current--; _videoReady = false; });
       _initMediaForCurrent();
     }
+  }
+
+  void _pause() {
+    if (_isPaused) return;
+    setState(() => _isPaused = true);
+    _progressCtrl.stop();
+    _videoCtrl?.pause();
+  }
+
+  void _resume() {
+    if (!_isPaused) return;
+    setState(() => _isPaused = false);
+    _progressCtrl.forward();
+    _videoCtrl?.play();
   }
 
   String _timeAgo(String iso) {
@@ -176,6 +191,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage>
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTapUp: (d) => d.localPosition.dx < w / 2 ? _retreat() : _advance(),
+        onLongPressStart: (_) => _pause(),
+        onLongPressEnd: (_) => _resume(),
         onVerticalDragUpdate: (d) {
           if (d.delta.dy > 0) {
             setState(() {
