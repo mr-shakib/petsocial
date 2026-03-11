@@ -10,9 +10,15 @@ class StoryRepository {
     File file, {
     void Function(double progress)? onProgress,
   }) async {
-    final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(file.path),
-    });
+    final MultipartFile multipart;
+    if (file.path.startsWith('content://')) {
+      final bytes = await file.readAsBytes();
+      multipart = MultipartFile.fromBytes(bytes,
+          filename: file.path.split('/').last);
+    } else {
+      multipart = await MultipartFile.fromFile(file.path);
+    }
+    final formData = FormData.fromMap({'file': multipart});
 
     final response = await dioClient.post(
       '/api/files/upload',

@@ -99,7 +99,7 @@ class _StoryCameraPageState extends State<StoryCameraPage>
     _controller = null;
     final ctrl = CameraController(
       _cameras[index],
-      ResolutionPreset.high,
+      ResolutionPreset.medium,
       enableAudio: true,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );

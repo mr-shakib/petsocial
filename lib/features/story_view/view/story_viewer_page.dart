@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import '../../home/repository/story_repository.dart';
 import '../../home/viewmodel/home_viewmodel.dart';
 import '../model/story_view_data.dart';
@@ -27,7 +28,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage>
   int _current = 0;
   double _dragY = 0;
   double _dragScale = 1.0;
-  VideoPlayerController? _videoCtrl;
+  Player? _player;
+  VideoController? _videoCtrl;
   bool _videoReady = false;
   bool _isPaused = false;
 
@@ -46,27 +48,34 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage>
   @override
   void dispose() {
     _progressCtrl.dispose();
-    _videoCtrl?.dispose();
+    _player?.dispose();
     super.dispose();
   }
 
   Future<void> _initMediaForCurrent() async {
-    await _videoCtrl?.dispose();
+    await _player?.dispose();
+    _player = null;
     _videoCtrl = null;
+
     final data = widget.data;
     final isVideo = data.isVideo.length > _current && data.isVideo[_current];
+
     if (isVideo) {
-      final ctrl = VideoPlayerController.networkUrl(
-        Uri.parse(data.mediaUrls[_current]),
-      );
-      _videoCtrl = ctrl;
-      await ctrl.initialize();
-      final vd = ctrl.value.duration;
+      final player = Player();
+      final ctrl = VideoController(player);
+      await player.open(Media(data.mediaUrls[_current]));
+      final vd = player.state.duration;
       _progressCtrl.duration = vd > const Duration(seconds: 2)
           ? (vd < const Duration(seconds: 60) ? vd : const Duration(seconds: 60))
           : _storyDuration;
-      await ctrl.play();
-      if (mounted) setState(() => _videoReady = true);
+      player.play();
+      if (mounted) {
+        setState(() {
+          _player = player;
+          _videoCtrl = ctrl;
+          _videoReady = true;
+        });
+      }
     } else {
       _progressCtrl.duration = _storyDuration;
     }
@@ -93,14 +102,14 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage>
     if (_isPaused) return;
     setState(() => _isPaused = true);
     _progressCtrl.stop();
-    _videoCtrl?.pause();
+    _player?.pause();
   }
 
   void _resume() {
     if (!_isPaused) return;
     setState(() => _isPaused = false);
     _progressCtrl.forward();
-    _videoCtrl?.play();
+    _player?.play();
   }
 
   void _showMoreSheet() {
