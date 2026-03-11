@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/pet_model.dart';
+import '../../../core/utils/error_parser.dart';
 import '../viewmodel/select_pet_viewmodel.dart';
 
 class SelectPetPage extends ConsumerWidget {
@@ -22,12 +23,10 @@ class SelectPetPage extends ConsumerWidget {
             Expanded(
               child: petsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                  child: Text(
-                    'Failed to load pets.\n${e.toString()}',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textGrey, fontSize: w * 0.038),
-                  ),
+                error: (e, _) => _ErrorState(
+                  message: ErrorParser.parse(e),
+                  onRetry: () => ref.invalidate(selectPetProvider),
+                  w: w,
                 ),
                 data: (pets) => pets.isEmpty
                     ? Center(
@@ -179,6 +178,68 @@ class _PetTile extends StatelessWidget {
             ),
             if (isSelected)
               Icon(Icons.check, color: AppColors.primary, size: w * 0.06),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  final double w;
+
+  const _ErrorState({
+    required this.message,
+    required this.onRetry,
+    required this.w,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: w * 0.1),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.pets_outlined, color: AppColors.textGrey, size: w * 0.15),
+            SizedBox(height: w * 0.04),
+            Text(
+              'Could not load your pets',
+              style: TextStyle(
+                fontSize: w * 0.042,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textDark,
+              ),
+            ),
+            SizedBox(height: w * 0.02),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textGrey, fontSize: w * 0.035),
+            ),
+            SizedBox(height: w * 0.06),
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: Size(w * 0.4, w * 0.12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(w * 0.14),
+                ),
+              ),
+              child: Text(
+                'Try again',
+                style: TextStyle(
+                  fontSize: w * 0.038,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
       ),

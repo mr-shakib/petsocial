@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/error_parser.dart';
 import '../repository/story_repository.dart';
 
 class StoryCreateState {
@@ -60,7 +61,7 @@ class StoryCreateNotifier extends Notifier<StoryCreateState> {
     } catch (e) {
       state = state.copyWith(
         isUploading: false,
-        error: e.toString().replaceFirst('Exception: ', ''),
+        error: ErrorParser.parse(e),
       );
       return false;
     }

@@ -61,9 +61,71 @@ class _HomePageState extends ConsumerState<HomePage> {
               if (mounted) ref.read(storyCreateProvider.notifier).reset();
             });
           }
+          if (prev?.error == null && next.error != null) {
+            showDialog<void>(
+              context: context,
+              builder: (_) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    MediaQuery.sizeOf(context).width * 0.05,
+                  ),
+                ),
+                title: const Text('Upload Failed'),
+                content: Text(next.error!),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      ref.read(storyCreateProvider.notifier).reset();
+                    },
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(color: AppColors.primary),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
         },
       );
     });
+  }
+
+  void _showComingSoon() {
+    final w = MediaQuery.sizeOf(context).width;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Row(
+          children: [
+            const Text('🚧', style: TextStyle(fontSize: 16)),
+            SizedBox(width: w * 0.03),
+            const Text('This feature is coming soon!'),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.textDark,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(w * 0.03),
+        ),
+      ));
+  }
+
+  void _onNavTap(int i) {
+    if (i == 0) {
+      setState(() => _navIndex = 0);
+    } else {
+      _showComingSoon();
+    }
+  }
+
+  void _onTabChanged(int i) {
+    if (i == 0) {
+      setState(() => _tabIndex = 0);
+    } else {
+      _showComingSoon();
+    }
   }
 
   Future<void> _initSignalR() async {
@@ -113,7 +175,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           SliverToBoxAdapter(
             child: HomeTabs(
               selectedIndex: _tabIndex,
-              onTabChanged: (i) => setState(() => _tabIndex = i),
+              onTabChanged: _onTabChanged,
             ),
           ),
           SliverToBoxAdapter(
@@ -130,11 +192,45 @@ class _HomePageState extends ConsumerState<HomePage> {
                 stories: const [],
                 onStoryTap: (_) {},
               ),
-              error: (_, __) => StoryBar(
-                onAddStory: () => context.push('/story/select-pet'),
-                userAvatarUrl: userAvatarUrl,
-                stories: const [],
-                onStoryTap: (_) {},
+              error: (_, __) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  StoryBar(
+                    onAddStory: () => context.push('/story/select-pet'),
+                    userAvatarUrl: userAvatarUrl,
+                    stories: const [],
+                    onStoryTap: (_) {},
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: w * 0.05, vertical: w * 0.02),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline,
+                            color: Colors.red[400], size: w * 0.045),
+                        SizedBox(width: w * 0.02),
+                        Expanded(
+                          child: Text(
+                            'Could not load stories',
+                            style: TextStyle(
+                                color: AppColors.textGrey,
+                                fontSize: w * 0.035),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => ref.invalidate(homeStoryProvider),
+                          child: Text(
+                            'Retry',
+                            style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: w * 0.035,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -168,7 +264,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       bottomNavigationBar: HomeBottomNavBar(
         selectedIndex: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
+        onTap: _onNavTap,
       ),
     );
   }

@@ -42,13 +42,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final h = MediaQuery.sizeOf(context).height;
     final auth = ref.watch(authProvider);
 
-    if (auth.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(auth.error!), backgroundColor: Colors.red),
+    ref.listen<AuthState>(authProvider, (prev, next) {
+      if (next.error != null && next.error != prev?.error) {
+        showDialog<void>(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(
+                MediaQuery.sizeOf(context).width * 0.05,
+              ),
+            ),
+            title: const Text('Login Failed'),
+            content: Text(next.error!),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: AppColors.primary),
+                ),
+              ),
+            ],
+          ),
         );
-      });
-    }
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,

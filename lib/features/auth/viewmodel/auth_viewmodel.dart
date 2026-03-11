@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/token_service.dart';
+import '../../../core/utils/error_parser.dart';
 import '../repository/auth_repository.dart';
 
 class AuthState {
@@ -42,10 +43,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  String _parseError(Object e) {
-    if (e is Exception) return e.toString().replaceFirst('Exception: ', '');
-    return 'Login failed. Please check your credentials.';
-  }
+  String _parseError(Object e) => ErrorParser.parseLogin(e);
 }
 
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
