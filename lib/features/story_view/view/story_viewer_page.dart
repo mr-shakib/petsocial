@@ -62,7 +62,15 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage>
 
     if (isVideo) {
       final player = Player();
-      final ctrl = VideoController(player);
+      final ctrl = VideoController(
+        player,
+        configuration: const VideoControllerConfiguration(
+          enableHardwareAcceleration: false,
+        ),
+      );
+      player.stream.error.listen((_) {
+        if (mounted) setState(() => _videoReady = false);
+      });
       await player.open(Media(data.mediaUrls[_current]));
       final vd = player.state.duration;
       _progressCtrl.duration = vd > const Duration(seconds: 2)

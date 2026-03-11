@@ -17,20 +17,36 @@ import 'widgets/story_section.dart';
 
 const _mockPosts = [
   (
-    image: 'https://picsum.photos/seed/dog10/400/450',
+    image: 'https://place.dog/400/450',
     pet: 'Hunter',
     owner: 'Jacob William',
-    avatar: 'https://picsum.photos/seed/av1/100/100',
+    avatar: 'https://place.dog/100/100',
     reactions: '12.3k',
     comments: '103',
   ),
   (
-    image: 'https://picsum.photos/seed/dog11/400/450',
+    image: 'https://placekitten.com/400/450',
     pet: 'Luna',
     owner: 'Sarah Connor',
-    avatar: 'https://picsum.photos/seed/av2/100/100',
+    avatar: 'https://placekitten.com/100/100',
     reactions: '8.1k',
     comments: '74',
+  ),
+  (
+    image: 'https://place.dog/401/450',
+    pet: 'Max',
+    owner: 'Emily Davis',
+    avatar: 'https://place.dog/101/100',
+    reactions: '5.2k',
+    comments: '48',
+  ),
+  (
+    image: 'https://placekitten.com/401/450',
+    pet: 'Bella',
+    owner: 'Chris Brown',
+    avatar: 'https://placekitten.com/101/100',
+    reactions: '9.7k',
+    comments: '91',
   ),
 ];
 

@@ -41,12 +41,21 @@ class _StoryPreviewPageState extends ConsumerState<StoryPreviewPage> {
     try {
       final path = widget.filePath;
       final player = Player();
-      final ctrl = VideoController(player);
+      final ctrl = VideoController(
+        player,
+        configuration: const VideoControllerConfiguration(
+          enableHardwareAcceleration: false,
+        ),
+      );
+      player.stream.error.listen((_) {
+        if (mounted) setState(() => _videoError = true);
+      });
       final media = path.startsWith('content://')
           ? Media(path)
-          : Media('file://$path');
+          : Media(Uri.file(path).toString());
       await player.open(media);
       await player.play();
+      await ctrl.waitUntilFirstFrameRendered;
       if (mounted) {
         setState(() {
           _player = player;
