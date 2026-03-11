@@ -13,7 +13,7 @@ import 'widgets/feed_post_card.dart';
 import 'widgets/home_app_bar.dart';
 import 'widgets/home_tabs.dart';
 import 'widgets/posting_indicator.dart';
-import 'widgets/story_bar.dart';
+import 'widgets/story_section.dart';
 
 const _mockPosts = [
   (
@@ -163,7 +163,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    final storiesAsync = ref.watch(homeStoryProvider);
     final createState = ref.watch(storyCreateProvider);
     final userAvatarUrl = ref.watch(profilePictureProvider).valueOrNull;
 
@@ -179,59 +178,10 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           SliverToBoxAdapter(
-            child: storiesAsync.when(
-              data: (stories) => StoryBar(
-                onAddStory: () => context.push('/story/select-pet'),
-                userAvatarUrl: userAvatarUrl,
-                stories: stories,
-                onStoryTap: _openStoryViewer,
-              ),
-              loading: () => StoryBar(
-                onAddStory: () => context.push('/story/select-pet'),
-                userAvatarUrl: userAvatarUrl,
-                stories: const [],
-                onStoryTap: (_) {},
-              ),
-              error: (_, __) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  StoryBar(
-                    onAddStory: () => context.push('/story/select-pet'),
-                    userAvatarUrl: userAvatarUrl,
-                    stories: const [],
-                    onStoryTap: (_) {},
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: w * 0.05, vertical: w * 0.02),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline,
-                            color: Colors.red[400], size: w * 0.045),
-                        SizedBox(width: w * 0.02),
-                        Expanded(
-                          child: Text(
-                            'Could not load stories',
-                            style: TextStyle(
-                                color: AppColors.textGrey,
-                                fontSize: w * 0.035),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => ref.invalidate(homeStoryProvider),
-                          child: Text(
-                            'Retry',
-                            style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: w * 0.035,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: StorySection(
+              onAddStory: () => context.push('/story/select-pet'),
+              onStoryTap: _openStoryViewer,
+              userAvatarUrl: userAvatarUrl,
             ),
           ),
           if (createState.isUploading || createState.isDone)

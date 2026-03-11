@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../../core/constants/app_colors.dart';
 import 'widgets/camera_controls_bar.dart';
+import 'widgets/camera_preview.dart';
 
 class StoryCameraPage extends StatefulWidget {
   final String petId;
@@ -218,7 +218,13 @@ class _StoryCameraPageState extends State<StoryCameraPage>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          _buildPreview(w),
+          StoryCameraPreview(
+            isLoading: _loading,
+            errorMessage: _errorMessage,
+            controller: _controller,
+            onRetry: _initCamera,
+            w: w,
+          ),
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -262,63 +268,4 @@ class _StoryCameraPageState extends State<StoryCameraPage>
     );
   }
 
-  Widget _buildPreview(double w) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
-    }
-    if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(w * 0.08),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.camera_alt_outlined,
-                  color: Colors.white54, size: w * 0.15),
-              SizedBox(height: w * 0.04),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: w * 0.038),
-              ),
-              SizedBox(height: w * 0.06),
-              TextButton(
-                onPressed: _errorMessage!.contains('Settings')
-                    ? openAppSettings
-                    : _initCamera,
-                child: Text(
-                  _errorMessage!.contains('Settings')
-                      ? 'Open Settings'
-                      : 'Retry',
-                  style: TextStyle(
-                      color: AppColors.primary, fontSize: w * 0.04),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    final ctrl = _controller;
-    if (ctrl == null || !ctrl.value.isInitialized) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
-    }
-    return ClipRect(
-      child: OverflowBox(
-        alignment: Alignment.center,
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: ctrl.value.previewSize!.height,
-            height: ctrl.value.previewSize!.width,
-            child: CameraPreview(ctrl),
-          ),
-        ),
-      ),
-    );
-  }
 }
