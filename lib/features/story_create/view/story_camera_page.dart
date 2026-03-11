@@ -158,15 +158,17 @@ class _StoryCameraPageState extends State<StoryCameraPage>
   Future<void> _startRecording() async {
     final ctrl = _controller;
     if (ctrl == null || !ctrl.value.isInitialized || _isRecording) return;
+    setState(() => _isRecording = true);
     try {
       await ctrl.startVideoRecording();
-      if (mounted) setState(() => _isRecording = true);
-    } on CameraException catch (_) {}
+    } on CameraException catch (_) {
+      if (mounted) setState(() => _isRecording = false);
+    }
   }
 
   Future<void> _stopRecording() async {
     final ctrl = _controller;
-    if (ctrl == null || !_isRecording) return;
+    if (ctrl == null || !_isRecording || !ctrl.value.isRecordingVideo) return;
     try {
       final file = await ctrl.stopVideoRecording();
       if (mounted) {
