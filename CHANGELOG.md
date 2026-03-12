@@ -51,4 +51,14 @@
 - Story bar height increased to accommodate the updated card size (Figma reference: 108 pt).
 - Story bar now has a 1 pt bottom border separating it from the feed below.
 
+---
 
+### Improvement
+
+**Home Screen — Pull to Refresh**
+
+> There was no way to manually refresh the story feed without restarting the app.
+
+- Pulling down on the home screen now refreshes the story feed.
+- The refresh indicator uses the brand primary colour and waits for the fetch to complete before dismissing.
+- Errors during refresh are handled silently — the existing feed remains visible if the refresh fails.

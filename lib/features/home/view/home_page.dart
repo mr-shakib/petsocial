@@ -185,8 +185,17 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const HomeAppBar(),
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.white,
+        onRefresh: () async {
+          ref.invalidate(homeStoryProvider);
+          // Wait for the new fetch to complete before dismissing the indicator
+          await ref.read(homeStoryProvider.future).catchError((_) => <StoryGroupModel>[]);
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           SliverToBoxAdapter(
             child: HomeTabs(
               selectedIndex: _tabIndex,
@@ -227,6 +236,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
         ],
+        ),
       ),
       bottomNavigationBar: HomeBottomNavBar(
         selectedIndex: _navIndex,
