@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 
-class PasswordInputField extends StatelessWidget {
+class PasswordInputField extends StatefulWidget {
   final TextEditingController controller;
 
   const PasswordInputField({super.key, required this.controller});
+
+  @override
+  State<PasswordInputField> createState() => _PasswordInputFieldState();
+}
+
+class _PasswordInputFieldState extends State<PasswordInputField> {
+  bool _obscure = true;
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +34,25 @@ class PasswordInputField extends StatelessWidget {
           ),
           SizedBox(height: h * 0.010),
           TextField(
-            controller: controller,
-            obscureText: true,
+            controller: widget.controller,
+            obscureText: _obscure,
             style: TextStyle(fontSize: w * 0.038, color: AppColors.textBlack),
             decoration: InputDecoration(
               filled: true,
               fillColor: AppColors.white,
               hintText: '••••••••',
-              hintStyle: TextStyle(color: AppColors.textGrey, fontSize: w * 0.038),
+              hintStyle: TextStyle(
+                color: AppColors.textGrey,
+                fontSize: w * 0.038,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: AppColors.textGrey,
+                  size: w * 0.05,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(w * 0.04),
                 borderSide: BorderSide.none,
@@ -45,7 +63,8 @@ class PasswordInputField extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(w * 0.04),
-                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                borderSide:
+                    const BorderSide(color: AppColors.primary, width: 1.5),
               ),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: w * 0.04,

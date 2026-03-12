@@ -16,23 +16,36 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppColors.background,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leadingWidth: w * 0.2,
+      leadingWidth: w * 0.18,
       leading: Padding(
         padding: EdgeInsets.only(left: w * 0.05),
-        child: SvgPicture.asset(
-          'assets/icons/app_icon.svg',
-          fit: BoxFit.contain,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: SvgPicture.asset(
+            'assets/icons/app_icon.svg',
+            width: w * 0.0795,
+            height: w * 0.082,
+            fit: BoxFit.contain,
+          ),
         ),
       ),
       actions: [
         _CircleButton(
           w: w,
-          child: Icon(Icons.search_rounded, color: AppColors.textBlack, size: w * 0.055),
+          child: SvgPicture.asset(
+            'assets/icons/search_icon.svg',
+            width: w * 0.048,
+            height: w * 0.048,
+            colorFilter: const ColorFilter.mode(
+              AppColors.textDark,
+              BlendMode.srcIn,
+            ),
+          ),
         ),
-        SizedBox(width: w * 0.03),
+        SizedBox(width: w * 0.025),
         _CircleButton(
           w: w,
-          child: _TwoLineMenuIcon(w: w),
+          child: _HamburgerIcon(w: w),
         ),
         SizedBox(width: w * 0.05),
       ],
@@ -49,10 +62,10 @@ class _CircleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: w * 0.11,
-      height: w * 0.11,
+      width: w * 0.1,
+      height: w * 0.1,
       decoration: const BoxDecoration(
-        color: Color(0xFFF0E8E2),
+        color: AppColors.iconButtonBg,
         shape: BoxShape.circle,
       ),
       child: Center(child: child),
@@ -60,30 +73,33 @@ class _CircleButton extends StatelessWidget {
   }
 }
 
-class _TwoLineMenuIcon extends StatelessWidget {
+class _HamburgerIcon extends StatelessWidget {
   final double w;
-  const _TwoLineMenuIcon({required this.w});
+  const _HamburgerIcon({required this.w});
 
   @override
   Widget build(BuildContext context) {
+    const color = AppColors.textDark;
+    const lineH = 2.0;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Container(
-          width: w * 0.05,
-          height: 2.5,
+          width: w * 0.046,
+          height: lineH,
           decoration: BoxDecoration(
-            color: AppColors.textBlack,
+            color: color,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
         SizedBox(height: w * 0.013),
         Container(
-          width: w * 0.03,
-          height: 2.5,
+          width: w * 0.028,
+          height: lineH,
           decoration: BoxDecoration(
-            color: AppColors.textBlack,
+            color: color,
             borderRadius: BorderRadius.circular(2),
           ),
         ),

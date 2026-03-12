@@ -10,9 +10,9 @@ class StoryAddItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    final cardW = w * 0.19;
-    final cardH = w * 0.24;
-    final radius = w * 0.04;
+    final cardW = w * 0.21;
+    final cardH = w * 0.277;
+    final radius = w * 0.045;
 
     return GestureDetector(
       onTap: onTap,
@@ -24,7 +24,8 @@ class StoryAddItem extends StatelessWidget {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE0D8D2), width: 1.5),
+                  border: Border.all(
+                      color: const Color(0xFFE0D8D2), width: 1.5),
                   borderRadius: BorderRadius.circular(radius),
                 ),
                 child: ClipRRect(
@@ -35,18 +36,19 @@ class StoryAddItem extends StatelessWidget {
                           width: cardW,
                           height: cardH,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _placeholder(cardW, cardH, w),
+                          errorBuilder: (_, __, ___) =>
+                              _placeholder(cardW, cardH, w),
                         )
                       : _placeholder(cardW, cardH, w),
                 ),
               ),
               // White ring + blue "+" badge
               Positioned(
-                bottom: -w * 0.022,
-                right: -w * 0.022,
+                bottom: -w * 0.025,
+                right: -w * 0.025,
                 child: Container(
-                  width: w * 0.088,
-                  height: w * 0.088,
+                  width: w * 0.10,
+                  height: w * 0.10,
                   decoration: const BoxDecoration(
                     color: AppColors.white,
                     shape: BoxShape.circle,
@@ -57,7 +59,8 @@ class StoryAddItem extends StatelessWidget {
                       color: Color(0xFF2196F3),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.add, color: AppColors.white, size: w * 0.042),
+                    child: Icon(Icons.add,
+                        color: AppColors.white, size: w * 0.048),
                   ),
                 ),
               ),

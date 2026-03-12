@@ -7,7 +7,7 @@ class AppColors {
   static const Color primaryLight = Color(0xFFF0C48A);
 
   // Backgrounds
-  static const Color background = Color(0xFFFAF5F2);
+  static const Color background = Color(0xFFFFF8F5);
   static const Color white = Color(0xFFFFFFFF);
   static const Color grey = Color(0xFFF9F9F9);
   static const Color black = Color(0xFF000000);
@@ -26,8 +26,11 @@ class AppColors {
   static const Color storyGradientTop = Color(0xFFDE0046);
   static const Color storyGradientBottom = Color(0xFFF7A34B);
 
-  // Progress bar
+  // Progress bar / dividers
   static const Color progressTrack = Color(0xFFF5E6E0);
+
+  // Icon button background (search, hamburger)
+  static const Color iconButtonBg = Color(0xFFFEEEE7);
 
   // Tab inactive
   static const Color tabInactive = Color(0xFFE0CBAB);

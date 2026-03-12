@@ -18,9 +18,9 @@ class StoryItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    final cardW = w * 0.19;
-    final cardH = w * 0.24;
-    final radius = w * 0.04;
+    final cardW = w * 0.21;
+    final cardH = w * 0.277;
+    final radius = w * 0.045;
 
     return GestureDetector(
       onTap: onTap,
