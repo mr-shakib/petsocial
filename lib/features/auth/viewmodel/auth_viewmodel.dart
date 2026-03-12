@@ -3,6 +3,10 @@ import '../../../core/services/token_service.dart';
 import '../../../core/utils/error_parser.dart';
 import '../repository/auth_repository.dart';
 
+/// Seeded in main() before ProviderScope is created so the router can set
+/// the correct initialLocation without an async gap (avoiding login flash).
+final initiallyAuthenticatedProvider = Provider<bool>((_) => false);
+
 class AuthState {
   final bool isLoading;
   final String? error;
@@ -24,7 +28,10 @@ class AuthState {
 
 class AuthNotifier extends Notifier<AuthState> {
   @override
-  AuthState build() => const AuthState();
+  AuthState build() {
+    final isAuth = ref.read(initiallyAuthenticatedProvider);
+    return AuthState(isAuthenticated: isAuth);
+  }
 
   Future<bool> login(String loginIdentifier, String password) async {
     state = state.copyWith(isLoading: true);
@@ -34,16 +41,21 @@ class AuthNotifier extends Notifier<AuthState> {
       await TokenService.saveToken(result.token);
       await TokenService.saveUserId(result.id);
       await TokenService.saveProfilePictureUrl(result.profilePictureUrl);
+      if (result.refreshToken != null) {
+        await TokenService.saveRefreshToken(result.refreshToken!);
+      }
       state = state.copyWith(isLoading: false, isAuthenticated: true);
       return true;
     } catch (e) {
-      final msg = _parseError(e);
-      state = state.copyWith(isLoading: false, error: msg);
+      state = state.copyWith(isLoading: false, error: ErrorParser.parseLogin(e));
       return false;
     }
   }
 
-  String _parseError(Object e) => ErrorParser.parseLogin(e);
+  Future<void> logout() async {
+    await TokenService.clear();
+    state = state.copyWith(isAuthenticated: false);
+  }
 }
 
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);

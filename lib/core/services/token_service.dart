@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class TokenService {
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'auth_token';
+  static const _refreshTokenKey = 'refresh_token';
   static const _userIdKey = 'user_id';
 
   static Future<void> saveToken(String token) =>
@@ -11,6 +12,12 @@ class TokenService {
   static Future<String?> getToken() => _storage.read(key: _tokenKey);
 
   static Future<void> deleteToken() => _storage.delete(key: _tokenKey);
+
+  static Future<void> saveRefreshToken(String token) =>
+      _storage.write(key: _refreshTokenKey, value: token);
+
+  static Future<String?> getRefreshToken() =>
+      _storage.read(key: _refreshTokenKey);
 
   static Future<void> saveUserId(String id) =>
       _storage.write(key: _userIdKey, value: id);
